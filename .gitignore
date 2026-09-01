@@ -1,0 +1,8 @@
+/autoclawpi
+/tmp/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.env
+credentials.json

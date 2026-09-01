@@ -1,0 +1,76 @@
+{{define "content"}}
+<div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between">
+  <div>
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:4px">Check-In</h1>
+    <p style="color:#64748b;font-size:14px">Daily check-in for all accounts</p>
+  </div>
+  <button class="btn btn-success" hx-post="/checkin/run" hx-target="#checkin-results" hx-indicator="#spinner">
+    <i class="fas fa-check-double"></i> Check-In All
+  </button>
+</div>
+
+<div id="checkin-results">
+  {{if .Results}}
+  <div style="display:grid;gap:12px">
+    {{range .Results}}
+    <div class="card" style="padding:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700">
+            {{slice .AccountName 0 1}}
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:14px">{{.AccountName}}</div>
+            <div style="font-size:12px;color:#64748b">Balance: {{.BalanceBefore}} → {{.BalanceAfter}} pts</div>
+          </div>
+        </div>
+        <span class="badge {{if eq .Status "success"}}badge-success{{else}}badge-warning{{end}}">
+          <i class="fas {{if eq .Status "success"}}fa-check-circle{{else}}fa-info-circle{{end}}"></i>
+          {{.Status}}
+        </span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        {{range .Tasks}}
+        <span class="badge {{if .Success}}badge-success{{else}}badge-info{{end}}">
+          <i class="fas {{if .Success}}fa-check{{else}}fa-minus{{end}}"></i>
+          {{.Name}} {{if .Points}}+{{.Points}}pts{{end}}
+        </span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <div class="card" style="padding:40px;text-align:center">
+    <i class="fas fa-calendar-check" style="font-size:48px;color:#2a2a32;margin-bottom:16px"></i>
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px">Daily Check-In</div>
+    <p style="color:#64748b;font-size:14px">Click "Check-In All" to claim daily rewards for all accounts</p>
+  </div>
+  {{end}}
+</div>
+
+<div id="spinner" class="htmx-indicator" style="text-align:center;padding:20px">
+  <i class="fas fa-spinner fa-spin" style="color:#818cf8;font-size:24px"></i>
+  <div style="color:#64748b;font-size:13px;margin-top:8px">Checking in...</div>
+</div>
+
+{{if .History}}
+<div style="margin-top:32px">
+  <h2 style="font-size:16px;font-weight:600;margin-bottom:12px">History</h2>
+  <div style="display:grid;gap:8px">
+    {{range .History}}
+    <div class="card" style="padding:12px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="fas {{if eq .Status "success"}}fa-check-circle{{else}}fa-times-circle{{end}}" style="color:{{if eq .Status "success"}}#34d399{{else}}#f87171{{end}}"></i>
+        <div>
+          <div style="font-size:13px;font-weight:500">{{.TaskID}}</div>
+          <div style="font-size:11px;color:#64748b">{{.Date}}</div>
+        </div>
+      </div>
+      <span style="font-size:13px;font-weight:600;color:#fbbf24">{{if gt .Points 0}}+{{end}}{{.Points}} pts</span>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login — autoclawpi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{accent:{500:'#6366f1',600:'#4f46e5'}}}}}</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+*{font-family:'Inter',system-ui,sans-serif;margin:0;padding:0;box-sizing:border-box}
+body{background:#07070a;color:#e2e8f0;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+
+/* Animated background grid */
+.bg-grid{position:fixed;top:0;left:0;width:100%;height:100%;background-image:linear-gradient(rgba(99,102,241,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.03) 1px,transparent 1px);background-size:60px 60px;z-index:0;animation:gridScroll 20s linear infinite}
+@keyframes gridScroll{0%{transform:translate(0,0)}100%{transform:translate(60px,60px)}}
+
+/* Glow orbs */
+.orb{position:fixed;border-radius:50%;filter:blur(80px);z-index:0;animation:orbFloat 8s ease-in-out infinite}
+.orb-1{width:400px;height:400px;background:rgba(99,102,241,0.08);top:-10%;left:-5%;animation-delay:0s}
+.orb-2{width:300px;height:300px;background:rgba(124,58,237,0.06);bottom:-5%;right:-5%;animation-delay:-3s}
+.orb-3{width:250px;height:250px;background:rgba(99,102,241,0.05);top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:-6s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-30px) scale(1.05)}66%{transform:translate(-20px,20px) scale(0.95)}}
+
+/* Card */
+.card{background:rgba(18,18,22,0.85);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:44px;width:420px;position:relative;z-index:1;box-shadow:0 0 80px rgba(99,102,241,0.04),0 0 0 1px rgba(255,255,255,0.02) inset;animation:cardIn 0.6s ease-out}
+@keyframes cardIn{0%{opacity:0;transform:translateY(20px) scale(0.97)}100%{opacity:1;transform:translateY(0) scale(1)}}
+
+/* Input */
+.input-wrap{position:relative;margin-bottom:20px}
+.input-wrap i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#475569;font-size:14px;transition:color .3s;pointer-events:none}
+.input-wrap input{width:100%;padding:14px 14px 14px 42px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;color:#e2e8f0;font-size:14px;outline:none;transition:all .3s ease}
+.input-wrap input:focus{border-color:rgba(99,102,241,0.4);box-shadow:0 0 0 4px rgba(99,102,241,0.08),0 0 20px rgba(99,102,241,0.04);background:rgba(255,255,255,0.05)}
+.input-wrap input:focus ~ i{color:#6366f1}
+.input-wrap input::placeholder{color:#475569}
+
+/* Button */
+.btn{width:100%;padding:14px;border-radius:14px;font-size:14px;font-weight:600;border:none;cursor:pointer;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;transition:all .3s ease;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,0.3)}
+.btn:active{transform:translateY(0)}
+.btn::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transition:left .5s}
+.btn:hover::after{left:100%}
+
+/* Divider */
+.divider{display:flex;align-items:center;gap:12px;margin:24px 0;color:#2a2a32;font-size:11px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.04)}
+
+/* Error shake */
+.error-box{background:rgba(220,38,38,0.08);color:#f87171;padding:14px 18px;border-radius:14px;font-size:13px;margin-bottom:22px;border:1px solid rgba(220,38,38,0.1);display:flex;align-items:center;gap:10px;animation:shake 0.4s ease-out}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="card">
+  <div style="text-align:center;margin-bottom:36px">
+    <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#6366f1,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;margin:0 auto 18px;box-shadow:0 8px 24px rgba(99,102,241,0.25);position:relative">
+      <i class="fas fa-robot"></i>
+      <div style="position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:#34d399;border:2px solid #121216"></div>
+    </div>
+    <h1 style="font-size:24px;font-weight:800;letter-spacing:-.03em;color:#f1f5f9">autoclawpi</h1>
+    <p style="font-size:13px;color:#64748b;margin-top:6px;font-weight:400">Account Manager — Admin Panel</p>
+  </div>
+
+  {{if .Error}}
+  <div class="error-box">
+    <i class="fas fa-exclamation-circle" style="font-size:16px;flex-shrink:0"></i>
+    <span>{{.Error}}</span>
+  </div>
+  {{end}}
+
+  <form method="post" onsubmit="document.getElementById('login-btn').disabled=true;this.querySelector('button').innerHTML='<i class=\\'fas fa-spinner fa-spin\\'></i> Signing in...'">
+    <div class="input-wrap">
+      <i class="fas fa-lock"></i>
+      <input type="password" name="password" placeholder="Enter panel password" required autofocus>
+    </div>
+    <button type="submit" class="btn" id="login-btn"><i class="fas fa-arrow-right-to-bracket"></i> Sign In</button>
+  </form>
+
+  <div class="divider">SECURE</div>
+
+  <div style="text-align:center;font-size:11px;color:#2a2a32;display:flex;align-items:center;justify-content:center;gap:8px">
+    <i class="fas fa-shield-halved" style="font-size:10px"></i>
+    <span>Protected area — unauthorized access prohibited</span>
+  </div>
+</div>
+</body>
+</html>

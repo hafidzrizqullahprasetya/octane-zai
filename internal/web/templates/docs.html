@@ -1,0 +1,105 @@
+{{define "content"}}
+<div style="margin-bottom:28px">
+  <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;letter-spacing:-.02em">API Documentation</h1>
+  <p style="color:#64748b;font-size:14px">OpenAI-compatible endpoints provided by autoclawpi</p>
+</div>
+
+<div class="glass" style="padding:20px;margin-bottom:16px">
+  <h3 style="font-size:15px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+    <i class="fas fa-globe" style="color:#818cf8"></i> Base URL
+  </h3>
+  <div style="background:rgba(0,0,0,0.3);padding:12px 16px;border-radius:10px;font-family:mono;font-size:13px;color:#60a5fa">
+    http://localhost:8787
+  </div>
+  <div style="margin-top:8px;font-size:12px;color:#64748b">Replace <code style="color:#94a3b8">localhost:8787</code> with your server address.</div>
+</div>
+
+<div class="glass" style="padding:20px;margin-bottom:16px">
+  <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+    <i class="fas fa-list" style="color:#818cf8"></i> Available Models
+  </h3>
+  <div style="display:flex;flex-wrap:wrap;gap:6px">
+    {{range .Models}}
+    <span class="badge badge-info"><i class="fas fa-robot"></i> {{.}}</span>
+    {{else}}
+    <span style="color:#64748b;font-size:13px">No models loaded</span>
+    {{end}}
+  </div>
+</div>
+
+<div class="glass" style="padding:20px;margin-bottom:16px">
+  <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+    <i class="fas fa-exchange-alt" style="color:#818cf8"></i> Endpoints
+  </h3>
+  <div style="display:grid;gap:16px">
+    <div style="background:rgba(0,0,0,0.2);border-radius:12px;padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge badge-success" style="font-size:10px">GET</span>
+        <code style="font-size:13px;color:#e2e8f0">/v1/models</code>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:8px">List available models. No authentication required.</p>
+      <div style="background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;font-family:mono;font-size:12px;color:#60a5fa">
+        curl http://localhost:8787/v1/models
+      </div>
+    </div>
+
+    <div style="background:rgba(0,0,0,0.2);border-radius:12px;padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge badge-warning" style="font-size:10px">POST</span>
+        <code style="font-size:13px;color:#e2e8f0">/v1/chat/completions</code>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:8px">Send a chat completion request. OpenAI-compatible format.</p>
+      <div style="background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;font-family:mono;font-size:12px;color:#60a5fa">
+        curl -X POST http://localhost:8787/v1/chat/completions \<br>
+        &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+        &nbsp;&nbsp;-d '{"model":"glm-5-turbo","messages":[{"role":"user","content":"halo"}]}'
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="glass" style="padding:20px;margin-bottom:16px">
+  <h3 style="font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+    <i class="fas fa-cog" style="color:#818cf8"></i> Parameters
+  </h3>
+  <div style="overflow-x:auto">
+    <table style="width:100%;font-size:13px;border-collapse:collapse">
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-weight:600">Parameter</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-weight:600">Type</th>
+        <th style="text-align:left;padding:10px 12px;color:#64748b;font-weight:600">Description</th>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+        <td style="padding:10px 12px"><code>model</code></td>
+        <td style="padding:10px 12px;color:#94a3b8">string</td>
+        <td style="padding:10px 12px;color:#64748b">Model ID (e.g., glm-5-turbo, glm-5.3, deepseek-v4-pro)</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+        <td style="padding:10px 12px"><code>messages</code></td>
+        <td style="padding:10px 12px;color:#94a3b8">array</td>
+        <td style="padding:10px 12px;color:#64748b">Chat messages [{role, content}]</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+        <td style="padding:10px 12px"><code>stream</code></td>
+        <td style="padding:10px 12px;color:#94a3b8">bool</td>
+        <td style="padding:10px 12px;color:#64748b">Enable SSE streaming (default: false)</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 12px"><code>max_tokens</code></td>
+        <td style="padding:10px 12px;color:#94a3b8">int</td>
+        <td style="padding:10px 12px;color:#64748b">Maximum tokens in response</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<div class="glass" style="padding:20px">
+  <h3 style="font-size:15px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+    <i class="fas fa-shield-alt" style="color:#818cf8"></i> Authentication
+  </h3>
+  <p style="font-size:12px;color:#64748b;margin-bottom:8px">If an API key is configured in Settings, include it as a header:</p>
+  <div style="background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;font-family:mono;font-size:12px;color:#60a5fa">
+    curl -H "Authorization: Bearer sk-your-key-here" http://localhost:8787/v1/models
+  </div>
+</div>
+{{end}}

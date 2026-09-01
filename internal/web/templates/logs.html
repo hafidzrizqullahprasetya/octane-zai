@@ -1,0 +1,52 @@
+{{define "content"}}
+<div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between">
+  <div>
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:4px">Request Logs</h1>
+    <p style="color:#64748b;font-size:14px">Live API request log — terminal view</p>
+  </div>
+  <div style="display:flex;gap:12px;font-size:12px">
+    <div style="padding:6px 12px;background:rgba(0,0,0,0.3);border-radius:8px;border:1px solid rgba(255,255,255,0.04);text-align:center">
+      <div style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Req</div>
+      <div style="font-weight:700;color:#34d399;font-family:mono">{{.TotalReq}}</div>
+    </div>
+    <div style="padding:6px 12px;background:rgba(0,0,0,0.3);border-radius:8px;border:1px solid rgba(255,255,255,0.04);text-align:center">
+      <div style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Tokens</div>
+      <div style="font-weight:700;color:#60a5fa;font-family:mono">{{.TotalTokens}}</div>
+    </div>
+    <div style="padding:6px 12px;background:rgba(0,0,0,0.3);border-radius:8px;border:1px solid rgba(255,255,255,0.04);text-align:center">
+      <div style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Cost ¥</div>
+      <div style="font-weight:700;color:#fbbf24;font-family:mono">{{printf "%.4f" .TotalCost}}</div>
+    </div>
+  </div>
+</div>
+
+{{if .Logs}}
+<div style="background:#050508;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:14px;font-family:'JetBrains Mono','Fira Code','Cascadia Code',monospace;font-size:12px;line-height:1.7;overflow:auto;max-height:calc(100vh - 200px)">
+  <div style="color:#2a2a32;margin-bottom:8px;font-size:11px;user-select:none">
+    <span style="color:#6366f1">◆</span> autoclawpi — last {{len .Logs}} requests
+  </div>
+  {{range .Logs}}
+  <div style="display:flex;gap:8px;padding:2px 0;white-space:nowrap">
+    {{if eq .Status "success"}}
+    <span style="color:#34d399;flex-shrink:0">✓</span>
+    {{else}}
+    <span style="color:#f87171;flex-shrink:0">✗</span>
+    {{end}}
+    <span style="color:#475569;flex-shrink:0">{{slice .CreatedAt 11 19}}</span>
+    <span style="color:#818cf8;flex-shrink:0">{{printf "%-18s" .Model}}</span>
+    <span style="color:#475569">→{{.PromptTokens}} ←{{.CompletionTokens}} ∑{{.TotalTokens}}</span>
+    <span style="color:#fbbf24">¥{{printf "%.4f" .Cost}}</span>
+    {{if .Error}}
+    <span style="color:#f87171">⚠ {{.Error}}</span>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+{{else}}
+<div style="background:#050508;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:40px;text-align:center;font-family:mono;font-size:13px;color:#2a2a32">
+  <div style="margin-bottom:12px;font-size:32px">~</div>
+  <div>$ <span style="color:#475569">curl http://localhost:8787/v1/chat/completions</span></div>
+  <div style="margin-top:4px;color:#2a2a32">_</div>
+</div>
+{{end}}
+{{end}}
