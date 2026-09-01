@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crmmc/autoclawpi/internal/client"
-	"github.com/crmmc/autoclawpi/internal/db"
-	"github.com/crmmc/autoclawpi/internal/sign"
+	"github.com/hirotomasato/autoclawpi/internal/client"
+	"github.com/hirotomasato/autoclawpi/internal/db"
+	"github.com/hirotomasato/autoclawpi/internal/sign"
 )
 
 //go:embed templates/*.html

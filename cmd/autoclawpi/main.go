@@ -15,12 +15,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/crmmc/autoclawpi/internal/client"
-	"github.com/crmmc/autoclawpi/internal/config"
-	"github.com/crmmc/autoclawpi/internal/db"
-	"github.com/crmmc/autoclawpi/internal/server"
-	"github.com/crmmc/autoclawpi/internal/store"
-	"github.com/crmmc/autoclawpi/internal/web"
+	"github.com/hirotomasato/autoclawpi/internal/client"
+	"github.com/hirotomasato/autoclawpi/internal/config"
+	"github.com/hirotomasato/autoclawpi/internal/db"
+	"github.com/hirotomasato/autoclawpi/internal/server"
+	"github.com/hirotomasato/autoclawpi/internal/store"
+	"github.com/hirotomasato/autoclawpi/internal/web"
 )
 
 var version = "dev"

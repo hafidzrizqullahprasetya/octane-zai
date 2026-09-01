@@ -12,8 +12,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/crmmc/autoclawpi/internal/client"
-	"github.com/crmmc/autoclawpi/internal/config"
+	"github.com/hirotomasato/autoclawpi/internal/client"
+	"github.com/hirotomasato/autoclawpi/internal/config"
 )
 
 type loginHandler struct {

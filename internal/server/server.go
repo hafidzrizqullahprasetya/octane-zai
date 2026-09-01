@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/crmmc/autoclawpi/internal/client"
-	"github.com/crmmc/autoclawpi/internal/db"
+	"github.com/hirotomasato/autoclawpi/internal/client"
+	"github.com/hirotomasato/autoclawpi/internal/db"
 )
 
 // Server adalah proxy server OpenAI-compatible.

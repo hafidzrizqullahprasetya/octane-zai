@@ -1,4 +1,4 @@
-module github.com/crmmc/autoclawpi
+module github.com/hirotomasato/autoclawpi
 
 go 1.26
 

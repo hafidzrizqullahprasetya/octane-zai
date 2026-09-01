@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crmmc/autoclawpi/internal/sign"
+	"github.com/hirotomasato/autoclawpi/internal/sign"
 )
 
 // Client adalah HTTP client ke API AutoClaw.

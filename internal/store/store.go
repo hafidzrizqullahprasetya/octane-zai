@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/crmmc/autoclawpi/internal/db"
+	"github.com/hirotomasato/autoclawpi/internal/db"
 )
 
 // Creds adalah kredensial akun AutoClaw (single-account compatibility).
