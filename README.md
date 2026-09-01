@@ -22,7 +22,7 @@
 - WAF prefix stripping — clean JSON responses
 - Standard OpenAI format — strips `reasoning_content`, `completion_tokens_details`
 
-### 🌐 Web Management Panel (Mobile-Friendly)
+### 🌐 Web Management Panel
 - **Dashboard** — account overview, points balance, API usage stats, cost tracking
 - **Accounts** — OAuth login, import tokens, view details, JWT decode, health check
 - **Check-In** — daily reward claiming for all accounts
@@ -30,7 +30,7 @@
 - **Settings** — password, multiple API keys, round-robin strategy
 - **Health** — test & refresh all account tokens
 - **API Docs** — endpoint reference with curl examples
-- **Responsive** — mobile-friendly with hamburger menu, collapsible sidebar
+- **Responsive** — collapsible sidebar, adaptive layout
 
 ### 🔐 Security
 - Web panel password protection
@@ -223,7 +223,7 @@ All data is stored in SQLite at `~/.autoclawpi/autoclawpi.db`:
 │  │  10  │ │ 1.2K │ │¥0.00 │                 │
 │  └──────┘ └──────┘ └──────┘                 │
 │  ─── Accounts ─────────────────────────      │
-│  ✓ non618999@gmail.com  36,954 pts           │
+│  ✓ Account #5           36,954 pts           │
 │  ✓ Account #6           36,200 pts           │
 └─────────────────────────────────────────────┘
 ```
@@ -247,14 +247,14 @@ All data is stored in SQLite at `~/.autoclawpi/autoclawpi.db`:
 - **Multi-account** — round-robin with auto failover
 - **Token management** — auto-refresh, never lose access
 - **Monitoring** — real-time logs, cost tracking, health checks
-- **Mobile-friendly** — responsive panel design
+- **Responsive** — collapsible sidebar, adaptive layout
 
 ---
 
 ## License
 
-MIT
+masantoid — see [LICENSE](LICENSE) file for details.
 
 ---
 
-*Built with ❤️ for the AutoClaw community*
+*Built with ❤️ by masanto*

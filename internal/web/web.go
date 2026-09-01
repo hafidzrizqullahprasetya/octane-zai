@@ -56,7 +56,9 @@ func New(cl *client.Client, opts ...Option) *Server {
 		o(s)
 	}
 
-	tmpl := template.New("").Funcs(template.FuncMap{})
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"pageTitle": pageTitle,
+	})
 	tmpl = template.Must(tmpl.ParseFS(templateFS, "templates/*.html"))
 	s.tmpl = tmpl
 
@@ -116,7 +118,7 @@ func (s *Server) renderTemplate(w http.ResponseWriter, page string, currentPage 
 			}
 		}
 	}
-	tmpl := template.Must(template.Must(template.New("").Parse(s.tmplStr("base.html"))).Parse(s.tmplStr(page)))
+	tmpl := template.Must(template.Must(template.New("").Funcs(template.FuncMap{"pageTitle": pageTitle}).Parse(s.tmplStr("base.html"))).Parse(s.tmplStr(page)))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err := tmpl.ExecuteTemplate(w, "base", d)
 	if err != nil {
