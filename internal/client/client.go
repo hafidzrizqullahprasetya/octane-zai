@@ -220,6 +220,80 @@ func (c *Client) ClaimTask(ctx context.Context, token, taskID string) (int, bool
 	return result.Data.RewardPoints, false, nil
 }
 
+// ClaimNewbieToken mengklaim token newbie guide (reward 100M token untuk akun baru).
+// Endpoint ini pakai header X-Authorization (uppercase, mirip inference proxy),
+// BUKAN commonHeaders userapi — tanpa signature X-Auth-*.
+// Body kosong. Return token guide (base64 user_id|timestamp|signature).
+func (c *Client) ClaimNewbieToken(ctx context.Context, accessToken string) (string, error) {
+	tok := accessToken
+	if !strings.HasPrefix(tok, "Bearer ") {
+		tok = "Bearer " + tok
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		c.UserAPIBase+"/autoclaw-proxy/proxy/autoclaw-newbie-guide/token", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("X-Authorization", tok)
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode >= 400 {
+		return "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, truncate(b, 300))
+	}
+	var out struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(b, &out); err != nil {
+		return "", fmt.Errorf("payload bukan JSON: %s", truncate(b, 200))
+	}
+	if out.Token == "" {
+		return "", fmt.Errorf("token kosong: %s", truncate(b, 300))
+	}
+	return out.Token, nil
+}
+
+// ClaimPromotionReward mengklaim reward promosi (modal_id + reward_type).
+// Header X-Authorization sama kayak ClaimNewbieToken.
+func (c *Client) ClaimPromotionReward(ctx context.Context, accessToken, modalID, rewardType string) (json.RawMessage, error) {
+	tok := accessToken
+	if !strings.HasPrefix(tok, "Bearer ") {
+		tok = "Bearer " + tok
+	}
+	body, _ := json.Marshal(map[string]string{
+		"modal_id":    modalID,
+		"reward_type": rewardType,
+	})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		c.UserAPIBase+"/autoclaw-proxy/proxy/autoclaw-promotion-reward", bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-Authorization", tok)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, truncate(b, 300))
+	}
+	return json.RawMessage(b), nil
+}
+
 func (c *Client) userapiPost(ctx context.Context, path string, body any, out any) error {
 	return c.userapiPostWithHeaders(ctx, path, body, out, sign.Headers())
 }
@@ -296,6 +370,13 @@ func (c *Client) InferenceHeader(accessToken, routeModelID string) map[string]st
 func RouteID(model string) string {
 	if containsUnderscore(model) {
 		return model // sudah route id
+	}
+	// DeepSeek model pakai prefix tdpsk_ + versi date.
+	switch model {
+	case "deepseek-v4-pro":
+		return "tdpsk_deepseek-v4-pro-202606"
+	case "deepseek-v4-flash":
+		return "tdpsk_deepseek-v4-flash-202605"
 	}
 	if isVersioned(model) {
 		return "zaicoding_" + model

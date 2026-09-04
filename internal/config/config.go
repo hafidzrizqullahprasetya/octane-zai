@@ -19,6 +19,10 @@ type Config struct {
 	InferenceBase string `json:"inference_base,omitempty"`
 	// UserAPIBase adalah base URL userapi (login/refresh).
 	UserAPIBase string `json:"userapi_base,omitempty"`
+	// RateLimitPerSec membatasi laju request inference (token/detik) utk hindari WAF.
+	RateLimitPerSec float64 `json:"rate_limit_per_sec,omitempty"`
+	// RateLimitBurst adalah kapasitas burst token bucket.
+	RateLimitBurst int `json:"rate_limit_burst,omitempty"`
 }
 
 // Defaults mengisi nilai kosong dengan default yang aman.

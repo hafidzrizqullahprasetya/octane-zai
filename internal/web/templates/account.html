@@ -55,10 +55,13 @@
       <div style="font-size:42px;font-weight:800;color:#fbbf24;letter-spacing:-.02em">{{.Balance}}</div>
       <div style="font-size:12px;color:#64748b;margin-top:4px;font-weight:500">Total Balance</div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:auto">
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:auto;flex-wrap:wrap">
+      <button class="btn" style="padding:8px 18px;font-size:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#0f0f14;font-weight:600"
+              hx-post="/accounts/{{.Account.ID}}/claim" hx-target="#claim-result" hx-swap="innerHTML"><i class="fas fa-gift"></i> Claim 100M</button>
       <button class="btn btn-success" style="padding:8px 18px;font-size:12px" hx-post="/accounts/{{.Account.ID}}/refresh" hx-target="closest div.glass" hx-swap="outerHTML"><i class="fas fa-sync"></i> Refresh</button>
       <a href="/checkin" class="btn btn-primary" style="padding:8px 18px;font-size:12px"><i class="fas fa-check-double"></i> Check-In</a>
     </div>
+    <div id="claim-result" style="margin-top:12px;text-align:center"></div>
   </div>
 </div>
 

@@ -113,7 +113,11 @@ func cmdServe(args []string) error {
 	}
 
 	// Main handler: OpenAI API
-	apiHandler := server.New(cl).WithAPIKey(cfg.APIKey).Handler()
+	apiSrv := server.New(cl).WithAPIKey(cfg.APIKey)
+	if cfg.RateLimitPerSec > 0 || cfg.RateLimitBurst > 0 {
+		apiSrv.WithRateLimit(cfg.RateLimitPerSec, cfg.RateLimitBurst)
+	}
+	apiHandler := apiSrv.Handler()
 
 	// Web panel handler
 	var webOpts []web.Option

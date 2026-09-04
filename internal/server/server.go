@@ -24,6 +24,7 @@ type Server struct {
 	rrIndex int
 	mu      sync.Mutex
 	apiKey  string
+	limiter *RateLimiter
 }
 
 // New membuat server baru.
@@ -31,7 +32,16 @@ func New(cl *client.Client) *Server {
 	return &Server{
 		cl:      cl,
 		rrIndex: 0,
+		limiter: NewRateLimiter(1.0/1.5, 3), // default: 1 req/1.5s, burst 3
 	}
+}
+
+// WithRateLimit mengatur rate limiter (token/detik + burst).
+func (s *Server) WithRateLimit(ratePerSec float64, burst int) *Server {
+	if ratePerSec > 0 && burst > 0 {
+		s.limiter = NewRateLimiter(ratePerSec, burst)
+	}
+	return s
 }
 
 // WithAPIKey mengatur API key untuk proteksi endpoint.
@@ -101,6 +111,14 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Rate limit: tunggu token sebelum menyentuh upstream (hindari WAF block)
+	if s.limiter != nil {
+		if err := s.limiter.Wait(r.Context()); err != nil {
+			writeOpenAIError(w, 503, "rate_limited", "request dibatalkan: "+err.Error())
+			return
+		}
+	}
+
 	s.mu.Lock()
 	startIdx := s.rrIndex % len(accounts)
 	s.rrIndex = (s.rrIndex + 1) % len(accounts)
@@ -135,6 +153,12 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 			if status == 200 {
 				return
 			}
+			continue
+		}
+		// 403 — WAF block, coba akun berikutnya
+		if status == 403 {
+			log.Printf("[autoclawpi] akun #%d WAF block, coba akun berikutnya", acct.ID)
+			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 		if status == 200 {
@@ -205,50 +229,52 @@ func (s *Server) forward(ctx context.Context, acct db.Account, route string, bod
 		w.WriteHeader(statusCode)
 		flusher, _ := w.(http.Flusher)
 		buf := make([]byte, 32*1024)
-		first := true
 		for {
 			n, rerr := resp.Body.Read(buf)
 			if n > 0 {
 				data := buf[:n]
-				if first && data[0] == '{' && bytes.Contains(data, []byte(`"message":"forbidden"`)) {
-					for i := 1; i < len(data); i++ {
-						if data[i] == '{' {
-							data = data[i:]
-							break
-						}
+				// Strip SEMUA prefix WAF "message":"forbidden" (bisa muncul berkali-kali)
+				for bytes.Contains(data, []byte(`"message":"forbidden"`)) {
+					idx := bytes.Index(data, []byte(`"message":"forbidden"`))
+					next := bytes.Index(data[idx+1:], []byte(`{`))
+					if next < 0 {
+						break
 					}
-					first = false
+					data = data[idx+next+1:]
 				}
-				if _, werr := w.Write(data); werr != nil {
-					return resp.StatusCode, ct, nil, nil
-				}
-				if flusher != nil {
-					flusher.Flush()
+				if len(data) > 0 {
+					if _, werr := w.Write(data); werr != nil {
+						return statusCode, ct, nil, nil
+					}
+					if flusher != nil {
+						flusher.Flush()
+					}
 				}
 			}
 			if rerr != nil {
 				break
 			}
-			first = false
 		}
-		return resp.StatusCode, ct, nil, nil
+		return statusCode, ct, nil, nil
 	}
 
 	// Non-streaming: baca body, clean, kirim
 	rawBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	cleaned := stripNonStandard(rawBody)
-	if cleaned != nil {
-		w.WriteHeader(statusCode)
-		w.Write(cleaned)
-	} else {
-		w.WriteHeader(statusCode)
-		w.Write(rawBody)
+	if cleaned == nil || isWAFBlockOnly(cleaned) {
+		// Hard WAF block — return 403 agar handleChat retry akun berikutnya
+		if cleaned != nil {
+			log.Printf("[autoclawpi] WAF hard block: %s", truncateResp(cleaned, 80))
+		}
+		return http.StatusForbidden, ct, rawBody, nil
 	}
+	w.WriteHeader(statusCode)
+	w.Write(cleaned)
 
 	// Log token usage
 	go logUsage(acct.ID, route, rawBody)
 
-	return resp.StatusCode, ct, nil, nil
+	return statusCode, ct, nil, nil
 }
 
 // stripNonStandard removes non-OpenAI fields from chat completion response.
@@ -295,18 +321,19 @@ func stripNonStandard(body []byte) []byte {
 		delete(usage, "prompt_tokens_details")
 	}
 	cleaned, _ := json.Marshal(data)
-		return cleaned
-	}
+	return cleaned
+}
 
-	// logUsage parse response body dan catat ke database.
+// logUsage parse response body dan catat ke database.
 func logUsage(acctID int64, model string, body []byte) {
-	if len(body) > 23 && body[0] == '{' && bytes.Contains(body, []byte(`"message":"forbidden"`)) {
-		for i := 1; i < len(body); i++ {
-			if body[i] == '{' {
-				body = body[i:]
-				break
-			}
+	// Strip ALL WAF prefixes
+	for bytes.Contains(body, []byte(`"message":"forbidden"`)) {
+		idx := bytes.Index(body, []byte(`"message":"forbidden"`))
+		next := bytes.Index(body[idx+1:], []byte(`{`))
+		if next < 0 {
+			break
 		}
+		body = body[idx+next+1:]
 	}
 	var data struct {
 		Usage *struct {
@@ -350,12 +377,15 @@ func logUsage(acctID int64, model string, body []byte) {
 
 // handleModels menangani /v1/models.
 func (s *Server) handleModels(w http.ResponseWriter, _ *http.Request) {
+	// Model yang sudah diverifikasi bisa inference (2026-09-05).
 	models := []map[string]any{
 		{"id": "auto", "object": "model", "created": 1, "owned_by": "autoclaw"},
+		{"id": "auto-fast", "object": "model", "created": 1, "owned_by": "autoclaw"},
 		{"id": "glm-5-turbo", "object": "model", "created": 1, "owned_by": "autoclaw"},
 		{"id": "glm-5.3", "object": "model", "created": 1, "owned_by": "autoclaw"},
 		{"id": "glm-5.3-flash", "object": "model", "created": 1, "owned_by": "autoclaw"},
-		{"id": "zaicoding_glm-5.3", "object": "model", "created": 1, "owned_by": "autoclaw"},
+		{"id": "deepseek-v4-pro", "object": "model", "created": 1, "owned_by": "autoclaw"},
+		{"id": "deepseek-v4-flash", "object": "model", "created": 1, "owned_by": "autoclaw"},
 	}
 	writeJSON(w, 200, map[string]any{"object": "list", "data": models})
 }
@@ -394,7 +424,7 @@ func (s *Server) refreshToken(acct *db.Account) (bool, error) {
 		if out != nil {
 			msg = out.Msg
 		}
-		return false, fmt.Errorf(msg)
+		return false, fmt.Errorf("%s", msg)
 	}
 	newRefresh := acct.RefreshToken
 	if out.Data.RefreshToken != "" {
@@ -431,4 +461,19 @@ func replaceModel(raw []byte, model string) ([]byte, error) {
 	}
 	data["model"] = model
 	return json.Marshal(data)
+}
+
+// isWAFBlockOnly checks if the response body is just a WAF block (no actual content).
+func isWAFBlockOnly(body []byte) bool {
+	if len(body) < 30 {
+		return bytes.Contains(body, []byte(`"message":"forbidden"`))
+	}
+	return false
+}
+
+func truncateResp(b []byte, n int) string {
+	if len(b) > n {
+		return string(b[:n]) + "..."
+	}
+	return string(b)
 }

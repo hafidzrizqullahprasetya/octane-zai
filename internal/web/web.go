@@ -70,6 +70,7 @@ func New(cl *client.Client, opts ...Option) *Server {
 	s.mux.HandleFunc("/accounts/login/start", s.authMiddleware(s.handleAccountsLoginStart))
 	s.mux.HandleFunc("/accounts/login/captcha-result", s.authMiddleware(s.handleAccountsLoginCaptcha))
 	s.mux.HandleFunc("/accounts/import", s.authMiddleware(s.handleAccountsImport))
+	s.mux.HandleFunc("/accounts/claim", s.authMiddleware(s.handleClaim100M))
 	s.mux.HandleFunc("/checkin", s.authMiddleware(s.handleCheckin))
 	s.mux.HandleFunc("/checkin/run", s.authMiddleware(s.handleCheckinRun))
 	s.mux.HandleFunc("/settings", s.authMiddleware(s.handleSettings))
@@ -322,13 +323,16 @@ func (s *Server) handleAccounts(w http.ResponseWriter, r *http.Request) {
 			if err == nil && id > 0 {
 				switch parts[1] {
 				case "delete":
-					db.DeleteAccount(id)
-					http.Redirect(w, r, "/accounts", http.StatusSeeOther)
-					return
-				case "refresh":
-					refreshBalance(id)
-					w.WriteHeader(204)
-					return
+								db.DeleteAccount(id)
+								http.Redirect(w, r, "/accounts", http.StatusSeeOther)
+								return
+							case "refresh":
+								refreshBalance(id)
+								w.WriteHeader(204)
+								return
+							case "claim":
+								s.handleClaim100MForAccount(w, r, id)
+								return
 				}
 			}
 		}
@@ -596,6 +600,74 @@ func (s *Server) handleAccountsImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.renderTemplate(w, "import.html", "accounts", nil)
+}
+
+// handleClaim100MForAccount handles /accounts/{id}/claim (HTMX button).
+func (s *Server) handleClaim100MForAccount(w http.ResponseWriter, r *http.Request, id int64) {
+	a, err := db.GetAccount(id)
+	if err != nil || a == nil || a.AccessToken == "" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, `<div style="padding:12px;border-radius:10px;background:rgba(220,38,38,0.12);color:#f87171;font-size:13px"><i class="fas fa-times-circle"></i> Account not found</div>`)
+		return
+	}
+	s.doClaim100M(w, r, a)
+}
+
+// handleClaim100M mengklaim reward 100M token untuk akun (JSON body).
+func (s *Server) handleClaim100M(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]any{"ok": false, "msg": "POST only"})
+		return
+	}
+	var req struct {
+		AccountID int64 `json:"account_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "msg": "invalid body"})
+		return
+	}
+	if req.AccountID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "msg": "account_id required"})
+		return
+	}
+	a, err := db.GetAccount(req.AccountID)
+	if err != nil || a == nil {
+		writeJSON(w, http.StatusNotFound, map[string]any{"ok": false, "msg": "account not found"})
+		return
+	}
+	if a.AccessToken == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"ok": false, "msg": "account has no token"})
+		return
+	}
+	s.doClaim100M(w, r, a)
+}
+
+// doClaim100M mengklaim token newbie guide dan mengembalikan HTML.
+func (s *Server) doClaim100M(w http.ResponseWriter, r *http.Request, a *db.Account) {
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	token, err := s.cl.ClaimNewbieToken(ctx, a.AccessToken)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, `<div style="padding:12px;border-radius:10px;background:rgba(220,38,38,0.12);color:#f87171;font-size:13px"><i class="fas fa-times-circle"></i> Claim gagal: %s</div>`, template.HTMLEscapeString(err.Error()))
+		return
+	}
+
+	// Refresh balance after claim
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 15*time.Second)
+	points := fetchBalance(ctx2, a.AccessToken, s.cl)
+	cancel2()
+	if points > 0 {
+		_ = db.UpdatePoints(a.ID, points)
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(w, `<div style="padding:14px;border-radius:10px;background:rgba(5,150,105,0.12);border:1px solid rgba(52,211,153,0.25)">
+  <div style="font-size:14px;font-weight:700;color:#34d399;margin-bottom:6px"><i class="fas fa-gift"></i> 100M Token Claimed!</div>
+  <div style="font-size:12px;color:#a7f3d0;font-family:mono;word-break:break-all;margin-bottom:8px">%s</div>
+  <div style="font-size:13px;color:#e2e8f0">Balance: <span style="color:#fbbf24;font-weight:700">%d pts</span></div>
+</div>`, template.HTMLEscapeString(token), points)
 }
 
 func (s *Server) handleCheckin(w http.ResponseWriter, r *http.Request) {
@@ -915,16 +987,16 @@ func handleOAuthCallbackRedirect(w http.ResponseWriter, r *http.Request, cl *cli
 func fetchBalance(ctx context.Context, token string, cl *client.Client) int {
 	ts := time.Now().Unix()
 	hdrs := map[string]string{
-		"authorization":   token,
-		"X-Lang":          "en",
-		"X-Product":       "autoclaw",
-		"X-Version":       "1.17.9",
-		"X-Tm":            "linux",
-		"X-Client-Type":   "pc",
-		"X-Auth-Appid":    "100003",
+		"authorization":    token,
+		"X-Lang":           "en",
+		"X-Product":        "autoclaw",
+		"X-Version":        "1.17.9",
+		"X-Tm":             "linux",
+		"X-Client-Type":    "pc",
+		"X-Auth-Appid":     "100003",
 		"X-Auth-TimeStamp": fmt.Sprintf("%d", ts),
-		"X-Auth-Sign":     sign.Sign(ts),
-		"X-Trace-Id":      sign.UUID(),
+		"X-Auth-Sign":      sign.Sign(ts),
+		"X-Trace-Id":       sign.UUID(),
 	}
 	req, err := http.NewRequestWithContext(ctx, "GET", cl.UserAPIBase+"/agent-assetmgr/api/v1/wallet-instances?biz_app_id=autoclaw", nil)
 	if err != nil {
@@ -938,22 +1010,18 @@ func fetchBalance(ctx context.Context, token string, cl *client.Client) int {
 		return 0
 	}
 	defer resp.Body.Close()
+	b, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	var data struct {
+		Code int `json:"code"`
 		Data *struct {
-			Wallets []struct {
-				Balance float64 `json:"balance"`
-			} `json:"wallets"`
+			TotalBalance float64 `json:"total_balance"`
 		} `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+	if err := json.Unmarshal(b, &data); err != nil {
 		return 0
 	}
 	if data.Data == nil {
 		return 0
 	}
-	total := 0
-	for _, w := range data.Data.Wallets {
-		total += int(w.Balance)
-	}
-	return total
+	return int(data.Data.TotalBalance)
 }
