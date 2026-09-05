@@ -38,6 +38,23 @@ type usageAccountResult struct {
 	Error       string           `json:"error"`
 }
 
+// usage24h menjumlahkan total token yang dipakai akun dalam 24 jam terakhir
+// dari tabel logs (sumber: server.handleChat; created_at UTC 'YYYY-MM-DD HH:MM:SS').
+// Gagal query → 0 (fail-open, jangan ganggu response usage).
+func usage24h(accountID int64) int64 {
+	var sum int64
+	err := db.DB.QueryRow(
+		`SELECT COALESCE(SUM(total_tokens),0) FROM logs
+		 WHERE account_id = ? AND status = 'success'
+		   AND created_at >= datetime('now', '-24 hours')`,
+		accountID,
+	).Scan(&sum)
+	if err != nil {
+		return 0
+	}
+	return sum
+}
+
 // fetchAccountUsage live-fetch kuota satu akun aktif, selalu mengembalikan
 // hasil (gagal → fetchedLive:false + error, points tetap).
 //
@@ -67,12 +84,22 @@ func (s *Server) fetchAccountUsage(ctx context.Context, acct db.Account) usageAc
 	if balance, err := s.cl.WalletBalance(cctx, acct.AccessToken); err == nil {
 		res.Points = balance
 		res.Plan = "AutoClaw"
+		used24h := usage24h(acct.ID)
+		denom := used24h + int64(balance)
+		pct := 100.0
+		if denom > 0 {
+			pct = float64(balance) / float64(denom) * 100
+		}
 		res.Quotas = map[string]Quota{
+			// Bar Quota Tracker: kiri = burn 24 jam (dari log sidecar),
+			// kanan = burn + saldo sekarang, persen = proporsi saldo.
+			// Points tidak punya window reset, jadi bar ini nyatain
+			// "seberapa terpakai" akun dalam sehari terakhir.
 			"Points": {
-				Used:                0,
-				Total:               float64(balance),
+				Used:                float64(used24h),
+				Total:               float64(denom),
 				Remaining:           float64(balance),
-				RemainingPercentage: 100,
+				RemainingPercentage: pct,
 				ResetAt:             nil,
 				Unlimited:           false,
 			},
