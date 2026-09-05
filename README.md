@@ -1,4 +1,4 @@
-# autoclawpi
+# octane-zai
 
 > Unofficial AutoClaw proxy — OpenAI-compatible API + web management panel
 
@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/license-masantoid-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Linux-333?logo=linux)]()
 
-**autoclawpi** is a self-hosted proxy for AutoClaw that provides an OpenAI-compatible API endpoint with multi-account round-robin, auto token refresh, daily check-in, 100M token claim, and a full-featured web management panel.
+**octane-zai** is a self-hosted proxy for AutoClaw that provides an OpenAI-compatible API endpoint with multi-account round-robin, auto token refresh, daily check-in, 100M token claim, and a full-featured web management panel.
 
 ---
 
@@ -51,19 +51,19 @@
 ### Install
 
 ```bash
-git clone https://github.com/hirotomasato/autoclawpi.git
-cd autoclawpi
-go build -o ~/.local/bin/autoclawpi ./cmd/autoclawpi
+git clone https://github.com/hafidzrizqullahprasetya/octane-zai.git
+cd octane-zai
+go build -o ~/.local/bin/octane-zai ./cmd/octane-zai
 ```
 
 ### Run
 
 ```bash
 # Start server with password
-autoclawpi serve --port 8787 --web-password yourpassword
+octane-zai serve --port 8787 --web-password yourpassword
 
 # With API key protection
-autoclawpi serve --port 8787 --web-password yourpassword --api-key sk-your-key
+octane-zai serve --port 8787 --web-password yourpassword --api-key sk-your-key
 ```
 
 Open **http://localhost:8787** in your browser.
@@ -76,19 +76,19 @@ Open **http://localhost:8787** in your browser.
 
 ```bash
 # Login (OAuth via browser with captcha)
-autoclawpi login
+octane-zai login
 
 # Account management
-autoclawpi account list
-autoclawpi account show 1
-autoclawpi account add --access "Bearer eyJ..." --refresh "Bearer eyJ..."
-autoclawpi account remove 1
+octane-zai account list
+octane-zai account show 1
+octane-zai account add --access "Bearer eyJ..." --refresh "Bearer eyJ..."
+octane-zai account remove 1
 
 # Check-in all accounts
-autoclawpi checkin
+octane-zai checkin
 
 # Start server
-autoclawpi serve --port 8787 --web-password yourpassword --api-key sk-your-key
+octane-zai serve --port 8787 --web-password yourpassword --api-key sk-your-key
 ```
 
 ### API
@@ -138,8 +138,8 @@ print(r.choices[0].message.content)
 ## Architecture
 
 ```
-autoclawpi
-├── cmd/autoclawpi/       # CLI entry point
+octane-zai
+├── cmd/octane-zai/       # CLI entry point
 │   ├── main.go           # Command routing, server startup
 │   ├── login.go          # OAuth login (captcha widget)
 │   ├── account.go        # Account management commands
@@ -159,7 +159,7 @@ autoclawpi
 ### Data Flow
 
 ```
-Client (OpenAI SDK) → autoclawpi (port 8787)
+Client (OpenAI SDK) → octane-zai (port 8787)
   ├── Rate Limiter (token bucket: 1 req/1.5s, burst 3)
   ├── /v1/chat/completions → Round-robin account selection
   │   ├── Account #1 → AutoClaw API → Response → Token usage logged
@@ -182,7 +182,7 @@ Client (OpenAI SDK) → autoclawpi (port 8787)
 | `--web-password` | `""` | Panel password (required) |
 | `--api-key` | `""` | API key for OpenAI endpoint |
 
-### Config File (`~/.autoclawpi/config.json`)
+### Config File (`~/.octane-zai/config.json`)
 
 ```json
 {
@@ -211,13 +211,13 @@ Client (OpenAI SDK) → autoclawpi (port 8787)
 
 | Variable | Description |
 |----------|-------------|
-| `AUTOCLAWPI_DIR` | Data directory (default: `~/.autoclawpi/`) |
+| `OCTANE_ZAI_DIR` | Data directory (default: `~/.octane-zai/`) |
 
 ---
 
 ## Storage
 
-All data is stored in SQLite at `~/.autoclawpi/autoclawpi.db`:
+All data is stored in SQLite at `~/.octane-zai/octane-zai.db`:
 
 | Table | Description |
 |-------|-------------|
@@ -277,7 +277,7 @@ All 7 models verified live via inference (2026-09-05):
 
 ---
 
-## Why autoclawpi?
+## Why octane-zai?
 
 - **Self-hosted** — full control over your data
 - **OpenAI-compatible** — use any existing OpenAI tooling
@@ -293,6 +293,8 @@ All 7 models verified live via inference (2026-09-05):
 ## License
 
 masantoid — see [LICENSE](LICENSE) file for details.
+Copyright (c) 2026 masanto (original autoclawpi). Forked and rebranded as
+octane-zai by Hafidz Rizqullah Prasetya — see commit history for attribution.
 
 ---
 

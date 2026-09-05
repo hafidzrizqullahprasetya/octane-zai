@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hirotomasato/autoclawpi/internal/client"
-	"github.com/hirotomasato/autoclawpi/internal/db"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/client"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/db"
 )
 
 // Server adalah proxy server OpenAI-compatible.
@@ -133,20 +133,20 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 
 		status, _, _, ferr := s.forward(r.Context(), acct, route, upstreamBody, req.Stream, w)
 		if ferr != nil {
-			log.Printf("[autoclawpi] akun #%d error: %v", acct.ID, ferr)
+			log.Printf("[octane-zai] akun #%d error: %v", acct.ID, ferr)
 			continue
 		}
 		// 401 — token expired, coba refresh
 		if status == 401 {
 			refreshed, rerr := s.refreshToken(&acct)
 			if rerr != nil {
-				log.Printf("[autoclawpi] akun #%d refresh gagal: %v", acct.ID, rerr)
+				log.Printf("[octane-zai] akun #%d refresh gagal: %v", acct.ID, rerr)
 				continue
 			}
 			// Retry dengan token baru
 			status, _, _, ferr2 := s.forward(r.Context(), acct, route, upstreamBody, req.Stream, w)
 			if ferr2 != nil {
-				log.Printf("[autoclawpi] akun #%d retry error: %v", acct.ID, ferr2)
+				log.Printf("[octane-zai] akun #%d retry error: %v", acct.ID, ferr2)
 				continue
 			}
 			_ = refreshed
@@ -157,7 +157,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 		// 403 — WAF block, coba akun berikutnya
 		if status == 403 {
-			log.Printf("[autoclawpi] akun #%d WAF block, coba akun berikutnya", acct.ID)
+			log.Printf("[octane-zai] akun #%d WAF block, coba akun berikutnya", acct.ID)
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
@@ -264,7 +264,7 @@ func (s *Server) forward(ctx context.Context, acct db.Account, route string, bod
 	if cleaned == nil || isWAFBlockOnly(cleaned) {
 		// Hard WAF block — return 403 agar handleChat retry akun berikutnya
 		if cleaned != nil {
-			log.Printf("[autoclawpi] WAF hard block: %s", truncateResp(cleaned, 80))
+			log.Printf("[octane-zai] WAF hard block: %s", truncateResp(cleaned, 80))
 		}
 		return http.StatusForbidden, ct, rawBody, nil
 	}
@@ -433,7 +433,7 @@ func (s *Server) refreshToken(acct *db.Account) (bool, error) {
 	acct.AccessToken = out.Data.AccessToken
 	acct.RefreshToken = newRefresh
 	_ = db.UpdateAccount(acct)
-	log.Printf("[autoclawpi] akun #%d token diperbarui", acct.ID)
+	log.Printf("[octane-zai] akun #%d token diperbarui", acct.ID)
 	return true, nil
 }
 

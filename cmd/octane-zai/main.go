@@ -1,4 +1,4 @@
-// Command autoclawpi adalah CLI untuk mengelola kredensial AutoClaw
+// Command octane-zai adalah CLI untuk mengelola kredensial AutoClaw
 // dan menyajikan API OpenAI-compatible lokal.
 package main
 
@@ -15,26 +15,26 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hirotomasato/autoclawpi/internal/client"
-	"github.com/hirotomasato/autoclawpi/internal/config"
-	"github.com/hirotomasato/autoclawpi/internal/db"
-	"github.com/hirotomasato/autoclawpi/internal/server"
-	"github.com/hirotomasato/autoclawpi/internal/store"
-	"github.com/hirotomasato/autoclawpi/internal/web"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/client"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/config"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/db"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/server"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/store"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/web"
 )
 
 var version = "dev"
 
-const usage = `autoclawpi — OpenAI-compatible proxy untuk AutoClaw (Z.ai)
+const usage = `octane-zai — OpenAI-compatible proxy untuk AutoClaw (Z.ai)
 
 Pemakaian:
-  autoclawpi serve                 jalankan server OpenAI-compatible (default :8787)
-  autoclawpi login                 coba login OAuth via browser (butuh captcha solve)
-  autoclawpi import                import token manual (stdin: access [refresh])
-  autoclawpi refresh               perbarui access token via refresh token
-  autoclawpi status                tampilkan status login (token disensor)
-  autoclawpi logout                hapus kredensial tersimpan
-  autoclawpi version               tampilkan versi
+  octane-zai serve                 jalankan server OpenAI-compatible (default :8787)
+  octane-zai login                 coba login OAuth via browser (butuh captcha solve)
+  octane-zai import                import token manual (stdin: access [refresh])
+  octane-zai refresh               perbarui access token via refresh token
+  octane-zai status                tampilkan status login (token disensor)
+  octane-zai logout                hapus kredensial tersimpan
+  octane-zai version               tampilkan versi
 `
 
 func main() {
@@ -43,10 +43,10 @@ func main() {
 		os.Exit(2)
 	}
 	// Init DB
-	cfgDir := os.Getenv("AUTOCLAWPI_DIR")
+	cfgDir := os.Getenv("OCTANE_ZAI_DIR")
 	if cfgDir == "" {
 		home, _ := os.UserHomeDir()
-		cfgDir = home + "/.autoclawpi"
+		cfgDir = home + "/.octane-zai"
 	}
 	if err := db.Init(cfgDir); err != nil {
 		fmt.Fprintln(os.Stderr, "db error:", err)
@@ -74,7 +74,7 @@ func main() {
 	case "checkin":
 		err = cmdCheckin(os.Args[2:])
 	case "version", "--version", "-v":
-		fmt.Println("autoclawpi", version)
+		fmt.Println("octane-zai", version)
 	default:
 		fmt.Fprint(os.Stderr, usage)
 		os.Exit(2)
@@ -152,7 +152,7 @@ func cmdServe(args []string) error {
 		_ = httpSrv.Shutdown(shCtx)
 	}()
 
-	fmt.Printf("autoclawpi listen di http://%s\n", addr)
+	fmt.Printf("octane-zai listen di http://%s\n", addr)
 	fmt.Printf("  API:  /v1/chat/completions, /v1/models\n")
 	fmt.Printf("  Panel: /, /accounts, /checkin, /settings\n")
 	if *webPwd != "" {

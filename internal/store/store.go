@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/hirotomasato/autoclawpi/internal/db"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/db"
 )
 
 // Creds adalah kredensial akun AutoClaw (single-account compatibility).
@@ -35,7 +35,7 @@ func Save(c *Creds) error {
 		if h == "" {
 			h = "unknown"
 		}
-		c.DeviceID = h + "-autoclawpi"
+		c.DeviceID = h + "-octane-zai"
 	}
 	if existing != nil {
 		// update existing

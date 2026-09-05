@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hirotomasato/autoclawpi/internal/client"
-	"github.com/hirotomasato/autoclawpi/internal/db"
-	"github.com/hirotomasato/autoclawpi/internal/sign"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/client"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/db"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/sign"
 )
 
 //go:embed templates/*.html
@@ -138,23 +138,23 @@ func (s *Server) tmplStr(name string) string {
 func pageTitle(page string) string {
 	switch page {
 	case "dashboard":
-		return "Dashboard — autoclawpi"
+		return "Dashboard — octane-zai"
 	case "accounts":
-		return "Accounts — autoclawpi"
+		return "Accounts — octane-zai"
 	case "checkin":
-		return "Check-In — autoclawpi"
+		return "Check-In — octane-zai"
 	case "settings":
-		return "Settings — autoclawpi"
+		return "Settings — octane-zai"
 	case "login":
-		return "Login — autoclawpi"
+		return "Login — octane-zai"
 	case "docs":
-		return "API Docs — autoclawpi"
+		return "API Docs — octane-zai"
 	case "health":
-		return "Health — autoclawpi"
+		return "Health — octane-zai"
 	case "logs":
-		return "Logs — autoclawpi"
+		return "Logs — octane-zai"
 	default:
-		return "autoclawpi"
+		return "octane-zai"
 	}
 }
 
@@ -505,7 +505,7 @@ func (s *Server) handleAccountsLoginCaptcha(w http.ResponseWriter, r *http.Reque
 	callbackServer := &http.Server{Handler: callbackMux}
 	go func() {
 		if err := callbackServer.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("[autoclawpi] callback server error: %v", err)
+			log.Printf("[octane-zai] callback server error: %v", err)
 		}
 	}()
 	time.AfterFunc(5*time.Minute, func() { callbackServer.Close() })
@@ -774,7 +774,7 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	s.renderTemplate(w, "settings.html", "settings", map[string]any{
 		"Strategy":      s.strategy,
-		"DBPath":        "~/.autoclawpi/autoclawpi.db",
+		"DBPath":        "~/.octane-zai/octane-zai.db",
 		"DBSize":        "OK",
 		"TotalAccounts": len(accounts),
 		"Models":        models,

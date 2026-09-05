@@ -1,4 +1,4 @@
-// Package db menyediakan akses SQLite untuk autoclawpi.
+// Package db menyediakan akses SQLite untuk octane-zai.
 // Schema: accounts + checkin_log + config.
 package db
 
@@ -49,10 +49,10 @@ func Init(dir string) error {
 		if err != nil {
 			return err
 		}
-		dir = filepath.Join(home, ".autoclawpi")
+		dir = filepath.Join(home, ".octane-zai")
 	}
 	_ = os.MkdirAll(dir, 0o700)
-	dbPath := filepath.Join(dir, "autoclawpi.db")
+	dbPath := filepath.Join(dir, "octane-zai.db")
 
 	var err error
 	DB, err = sql.Open("sqlite", dbPath+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")

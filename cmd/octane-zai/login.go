@@ -12,8 +12,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/hirotomasato/autoclawpi/internal/client"
-	"github.com/hirotomasato/autoclawpi/internal/config"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/client"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/config"
 )
 
 type loginHandler struct {
@@ -221,7 +221,7 @@ func captchaPage(scene, prefix, supplier string, port int) string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>autoclawpi - Login</title>
+<title>octane-zai - Login</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#111;color:#eee;display:flex;justify-content:center;align-items:center;min-height:100vh}
@@ -240,7 +240,7 @@ p{font-size:14px;color:#888;margin-bottom:24px}
 </head>
 <body>
 <div class="container">
-<h1>autoclawpi</h1>
+<h1>octane-zai</h1>
 <p>Klik tombol di bawah untuk verifikasi captcha, lalu login ke Z.ai</p>
 <div id="captcha-zone"></div>
 <button id="captcha-btn" disabled>Memuat...</button>

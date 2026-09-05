@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/hirotomasato/autoclawpi/internal/db"
+	"github.com/hafidzrizqullahprasetya/octane-zai/internal/db"
 )
 
 func cmdAccount(args []string) error {
@@ -33,7 +33,7 @@ func listAccounts() error {
 		return err
 	}
 	if len(accounts) == 0 {
-		fmt.Println("tidak ada akun. jalankan 'autoclawpi login' atau 'autoclawpi import'")
+		fmt.Println("tidak ada akun. jalankan 'octane-zai login' atau 'octane-zai import'")
 		return nil
 	}
 	fmt.Printf("%-4s %-20s %-8s %-12s %-8s %s\n", "ID", "Name", "Provider", "User", "Points", "Last Used")
@@ -56,10 +56,10 @@ func addAccount(args []string) error {
 	fs.Parse(args)
 
 	if *access == "" {
-		fmt.Fprintf(os.Stderr, "usage: autoclawpi account add --access <token> [--refresh <token>] [--name <name>] [--provider zai|google]\n")
+		fmt.Fprintf(os.Stderr, "usage: octane-zai account add --access <token> [--refresh <token>] [--name <name>] [--provider zai|google]\n")
 		os.Exit(2)
 	}
-	deviceID := fmt.Sprintf("autoclawpi-%d", time.Now().UnixNano())
+	deviceID := fmt.Sprintf("octane-zai-%d", time.Now().UnixNano())
 	id, err := db.AddAccount(*name, *access, *refresh, *provider, "", "", deviceID)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func addAccount(args []string) error {
 
 func removeAccount(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: autoclawpi account remove <id>")
+		return fmt.Errorf("usage: octane-zai account remove <id>")
 	}
 	var id int64
 	if _, err := fmt.Sscanf(args[0], "%d", &id); err != nil {

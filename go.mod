@@ -1,4 +1,4 @@
-module github.com/hirotomasato/autoclawpi
+module github.com/hafidzrizqullahprasetya/octane-zai
 
 go 1.26
 

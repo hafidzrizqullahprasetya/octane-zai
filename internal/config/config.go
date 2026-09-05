@@ -1,4 +1,4 @@
-// Package config menyimpan konfigurasi runtime autoclawpi.
+// Package config menyimpan konfigurasi runtime octane-zai.
 package config
 
 import (
@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-// Config adalah konfigurasi autoclawpi.
+// Config adalah konfigurasi octane-zai.
 type Config struct {
 	// Host untuk listen (default 127.0.0.1, jangan 0.0.0.0).
 	Host string `json:"host"`
@@ -41,19 +41,19 @@ func (c *Config) Defaults() {
 	}
 }
 
-// Dir mengembalikan direktori data autoclawpi.
+// Dir mengembalikan direktori data octane-zai.
 func Dir() string {
-	if d := os.Getenv("AUTOCLAWPI_DIR"); d != "" {
+	if d := os.Getenv("OCTANE_ZAI_DIR"); d != "" {
 		return d
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return ".autoclawpi"
+		return ".octane-zai"
 	}
-	return filepath.Join(home, ".autoclawpi")
+	return filepath.Join(home, ".octane-zai")
 }
 
-// Path mengembalikan path file di dalam dir autoclawpi.
+// Path mengembalikan path file di dalam dir octane-zai.
 func Path(name string) string {
 	return filepath.Join(Dir(), name)
 }
