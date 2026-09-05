@@ -102,11 +102,19 @@ func cmdServe(args []string) error {
 	fs.Parse(args)
 
 	cfg, cl := loadAll()
+	// Env override (untuk Docker): flag > env > config file > default.
 	if *port != 0 {
 		cfg.Port = *port
+	} else if p := os.Getenv("PORT"); p != "" {
+		var n int
+		if _, err := fmt.Sscanf(p, "%d", &n); err == nil && n > 0 {
+			cfg.Port = n
+		}
 	}
 	if *host != "" {
 		cfg.Host = *host
+	} else if h := os.Getenv("HOSTNAME"); h != "" {
+		cfg.Host = h
 	}
 	if *apiKey != "" {
 		cfg.APIKey = *apiKey
