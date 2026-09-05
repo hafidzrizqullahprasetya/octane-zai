@@ -221,7 +221,7 @@ func (s *Server) forward(ctx context.Context, acct db.Account, route string, bod
 	}
 
 	// Baca response body untuk logging (non-streaming)
-	// (TeeReader digunakan untuk streaming path, baca langsung untuk non-streaming)
+	// (Streaming path: TeeReader menyalin SSE body untuk logUsageStream)
 	// Stream balik ke klien
 	w.Header().Set("Content-Type", ct)
 	if stream {
@@ -229,9 +229,11 @@ func (s *Server) forward(ctx context.Context, acct db.Account, route string, bod
 		w.Header().Set("X-Accel-Buffering", "no")
 		w.WriteHeader(statusCode)
 		flusher, _ := w.(http.Flusher)
+		var streamBuf bytes.Buffer
+		tee := io.TeeReader(resp.Body, &streamBuf)
 		buf := make([]byte, 32*1024)
 		for {
-			n, rerr := resp.Body.Read(buf)
+			n, rerr := tee.Read(buf)
 			if n > 0 {
 				data := buf[:n]
 				// Strip SEMUA prefix WAF "message":"forbidden" (bisa muncul berkali-kali)
@@ -256,6 +258,9 @@ func (s *Server) forward(ctx context.Context, acct db.Account, route string, bod
 				break
 			}
 		}
+		// Logging asinkron dari buffer stream (usage di event terakhir,
+		// parser SSE ringan, fail-open — tidak pernah menahan aliran).
+		go logUsageStream(acct.ID, route, streamBuf.Bytes())
 		return statusCode, ct, nil, nil
 	}
 

@@ -4,6 +4,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -36,6 +37,46 @@ type usageAccountResult struct {
 	Points      int              `json:"points"`
 	FetchedLive bool             `json:"fetchedLive"`
 	Error       string           `json:"error"`
+}
+
+// logUsageStream mengekstrak usage dari SSE stream body (event terakhir yang
+// membawa "usage") dan mencatatnya ke tabel logs. Parser ringan: cari segmen
+// data JSON terakhir yang punya field usage. Fail-open total.
+func logUsageStream(acctID int64, model string, body []byte) {
+	if len(body) == 0 {
+		return
+	}
+	// Ambil kemunculan TERAKHIR dari blok usage di stream (event final).
+	idx := bytes.LastIndex(body, []byte(`"usage":`))
+	if idx < 0 {
+		return
+	}
+	// Ambil sampai "total_tokens":<n> kalau ada, else 512 byte.
+	end := bytes.Index(body[idx:], []byte(`}}`))
+	if end < 0 || end > 768 {
+		end = 512
+	}
+	// Bungkus jadi objek JSON valid: {"usage":{...}} — captured segment
+	// sudah menutup usage obj, wrapper perlu kurung tutup sendiri.
+	snippet := append(append([]byte(`{`), body[idx:idx+end+2]...), '}')
+	var data struct {
+		Usage *struct {
+			PromptTokens     int `json:"prompt_tokens"`
+			CompletionTokens int `json:"completion_tokens"`
+			TotalTokens      int `json:"total_tokens"`
+		} `json:"usage"`
+	}
+	if err := json.Unmarshal(snippet, &data); err != nil || data.Usage == nil {
+		return
+	}
+	if data.Usage.TotalTokens <= 0 && data.Usage.PromptTokens <= 0 {
+		return
+	}
+	if _, err := db.DB.Exec(`INSERT INTO logs (account_id, model, prompt_tokens, completion_tokens, total_tokens, cost, status, error)
+	         VALUES (?, ?, ?, ?, ?, 0, 'success', '')`,
+		acctID, model, data.Usage.PromptTokens, data.Usage.CompletionTokens, data.Usage.TotalTokens); err != nil {
+		return
+	}
 }
 
 // usage24h menjumlahkan total token yang dipakai akun dalam 24 jam terakhir
