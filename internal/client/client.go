@@ -338,6 +338,54 @@ func (c *Client) UsageQuota(ctx context.Context, accessToken string) ([]byte, er
 	return b, nil
 }
 
+// WalletBaseURL adalah base API asset AutoClaw (userapi, kelas kredensial
+// yang sama dengan check-in — bukan GLM Coding Plan).
+const WalletBaseURL = "https://autoglm-api.autoglm.ai"
+
+// WalletBalance mengambil saldo points AutoClaw live:
+// GET /agent-assetmgr/api/v1/wallet-instances?biz_app_id=autoclaw
+// Header persis commonHeaders check-in: sign.HeadersAt + X-Lang/X-Client-Type
+// + authorization lowercase TANPA prefix Bearer.
+func (c *Client) WalletBalance(ctx context.Context, accessToken string) (int, error) {
+	hdrs := sign.HeadersAt(time.Now().Unix())
+	hdrs["X-Lang"] = "en"
+	hdrs["X-Client-Type"] = "pc"
+	hdrs["authorization"] = accessToken // lowercase + raw, gaya commonHeaders
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		WalletBaseURL+"/agent-assetmgr/api/v1/wallet-instances?biz_app_id=autoclaw", nil)
+	if err != nil {
+		return 0, err
+	}
+	for k, v := range hdrs {
+		req.Header.Set(k, v)
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return 0, err
+	}
+	if resp.StatusCode >= 400 {
+		return 0, fmt.Errorf("HTTP %d: %s", resp.StatusCode, truncate(b, 300))
+	}
+	var r struct {
+		Data *struct {
+			TotalBalance int `json:"total_balance"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(b, &r); err != nil {
+		return 0, fmt.Errorf("payload bukan JSON: %v — body: %s", err, truncate(b, 300))
+	}
+	if r.Data == nil {
+		return 0, fmt.Errorf("wallet tanpa data — body: %s", truncate(b, 300))
+	}
+	return r.Data.TotalBalance, nil
+}
+
 func (c *Client) userapiPost(ctx context.Context, path string, body any, out any) error {
 	return c.userapiPostWithHeaders(ctx, path, body, out, sign.Headers())
 }

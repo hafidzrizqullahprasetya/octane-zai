@@ -40,6 +40,13 @@ type usageAccountResult struct {
 
 // fetchAccountUsage live-fetch kuota satu akun aktif, selalu mengembalikan
 // hasil (gagal → fetchedLive:false + error, points tetap).
+//
+// Urutan sumber (wallet-first):
+//  1. Wallet points AutoClaw (agent-assetmgr wallet-instances) — kelas
+//     kredensial yang sama dengan check-in, selalu jalan buat akun OAuth.
+//  2. GLM Coding Plan (api.z.ai quota/limit) — hanya relevan bila akun
+//     punya API-key coding plan; HTTP 200 code:401 dipakai sebagai sinyal
+//     "bukan akun coding plan" dan BUKAN dianggap error keras.
 func (s *Server) fetchAccountUsage(ctx context.Context, acct db.Account) usageAccountResult {
 	res := usageAccountResult{
 		Name:        acct.Name,
@@ -56,6 +63,25 @@ func (s *Server) fetchAccountUsage(ctx context.Context, acct db.Account) usageAc
 	cctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
 
+	// 1) Wallet points AutoClaw — sumber utama.
+	if balance, err := s.cl.WalletBalance(cctx, acct.AccessToken); err == nil {
+		res.Points = balance
+		res.Plan = "AutoClaw"
+		res.Quotas = map[string]Quota{
+			"Points": {
+				Used:                0,
+				Total:               float64(balance),
+				Remaining:           float64(balance),
+				RemainingPercentage: 100,
+				ResetAt:             nil,
+				Unlimited:           false,
+			},
+		}
+		res.FetchedLive = true
+		return res
+	}
+
+	// 2) Fallback GLM Coding Plan (API-key class).
 	body, err := s.cl.UsageQuota(cctx, acct.AccessToken)
 	if err != nil {
 		res.Error = err.Error()
@@ -65,7 +91,9 @@ func (s *Server) fetchAccountUsage(ctx context.Context, acct db.Account) usageAc
 	plan, quotas, err := parseGlmLimits(body)
 	if err != nil {
 		// api.z.ai mengembalikan HTTP 200 + code:401 di body saat token
-		// expired — coba refresh token sekali lalu fetch ulang (self-healing).
+		// bukan coding-plan token — coba refresh token sekali lalu fetch
+		// ulang (self-healing). Kalau tetap 401, ini memang bukan akun
+		// coding plan: jadikan catatan, bukan error keras.
 		bodyStr := string(body)
 		if strings.Contains(bodyStr, "\"code\":401") || strings.Contains(bodyStr, "token expired") {
 			if _, refErr := s.refreshToken(&acct); refErr == nil {
@@ -80,6 +108,8 @@ func (s *Server) fetchAccountUsage(ctx context.Context, acct db.Account) usageAc
 					}
 				}
 			}
+			res.Error = "bukan akun GLM Coding Plan (quota/limit code:401); wallet AutoClaw juga gagal"
+			return res
 		}
 		// Sertakan cuplikan body biar shape tak terduga dari api.z.ai
 		// bisa didiagnosis dari error message sendirian.
