@@ -294,6 +294,50 @@ func (c *Client) ClaimPromotionReward(ctx context.Context, accessToken, modalID,
 	return json.RawMessage(b), nil
 }
 
+// QuotaBaseURL adalah base endpoint monitor kuota Z.ai (GLM Coding Plan).
+const QuotaBaseURL = "https://api.z.ai"
+
+// bearerPrefix memastikan token berprefix "Bearer ".
+func bearerPrefix(tok string) string {
+	if strings.HasPrefix(tok, "Bearer ") {
+		return tok
+	}
+	return "Bearer " + tok
+}
+
+// UsageQuota mengambil kuota GLM live untuk access token tertentu:
+// GET https://api.z.ai/api/monitor/usage/quota/limit dengan Authorization Bearer.
+// Fingerprint headers mengikuti InferenceHeader — X-Tm wajib "win"
+// (patch WAF e678c06, jangan linux).
+func (c *Client) UsageQuota(ctx context.Context, accessToken string) ([]byte, error) {
+	hdrs := c.InferenceHeader(accessToken, "")
+	hdrs["Authorization"] = bearerPrefix(accessToken)
+	hdrs["Accept"] = "application/json"
+	delete(hdrs, "X-Authorization") // api.z.ai pakai Authorization standar
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		QuotaBaseURL+"/api/monitor/usage/quota/limit", nil)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range hdrs {
+		req.Header.Set(k, v)
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, truncate(b, 300))
+	}
+	return b, nil
+}
+
 func (c *Client) userapiPost(ctx context.Context, path string, body any, out any) error {
 	return c.userapiPostWithHeaders(ctx, path, body, out, sign.Headers())
 }

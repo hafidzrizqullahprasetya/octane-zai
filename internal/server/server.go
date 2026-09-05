@@ -57,6 +57,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/chat/completions", s.wrapAuth(s.handleChat))
 	mux.HandleFunc("/v1/models", s.wrapAuth(s.handleModels))
+	mux.HandleFunc("/v1/usage", s.wrapAuth(s.handleUsage))
 	mux.HandleFunc("/healthz", s.handleHealth)
 	return mux
 }
